@@ -1,15 +1,22 @@
 const boom = require('@hapi/boom');
 const { models } = require('./../libs/sequelize');
+const bcrypt = require('bcrypt');
 
 class UserService {
   async create(data) {
-    const newUser = await models.User.create(data);
+    const hash = await bcrypt.hash(data.password, 10);
+    const newUser = await models.User.create({
+      ...data,
+      password: hash
+    });
+    delete newUser.dataValues.password;
     return newUser;
   }
 
   async find(query) {
     const options = {
-      include: ['customer']
+      include: ['customer'],
+      attributes: { exclude: ['password'] }
     }
     const { limit, offset } = query;
     if (limit && offset) {
@@ -18,6 +25,13 @@ class UserService {
     }
     const users = await models.User.findAll(options);
     return users;
+  }
+
+  async findByEmail(email) {
+    const response = await models.User.findOne({
+      where: { email }
+    });
+    return response;
   }
 
   async findOne(id) {

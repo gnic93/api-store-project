@@ -1,12 +1,18 @@
 const express = require('express');
+const passport = require('passport');
+
 const OrderService = require('../services/order.service');
 const validatorHandler = require('../middlewares/validator.handler');
+const { checkRoles } = require('./../middlewares/auth.handler');
+
 const { createOrderSchema, addItemSchema, getOrderSchema, updateOrderSchema, queryOrderSchema } = require('../schemas/order.schema');
 
 const router = express.Router();
 const service = new OrderService();
 
 router.get('/',
+  passport.authenticate('jwt', {session: false}),
+  checkRoles('admin', 'seller'),
   validatorHandler(queryOrderSchema, 'query'),
   async (req, res, next) => {
   try {
@@ -18,6 +24,8 @@ router.get('/',
 });
 
 router.get('/:id',
+  passport.authenticate('jwt', {session: false}),
+  checkRoles('admin', 'seller'),
   validatorHandler(getOrderSchema, 'params'),
   async (req, res, next) => {
     try {
@@ -31,10 +39,14 @@ router.get('/:id',
 );
 
 router.post('/',
+  passport.authenticate('jwt', {session: false}),
+  checkRoles('admin', 'seller', 'customer'),
   validatorHandler(createOrderSchema, 'body'),
   async (req, res, next) => {
     try {
-      const body = req.body;
+      const body = {
+        userId: req.user.sub,
+      }
       const newOrder = await service.create(body);
       res.status(201).json(newOrder);
     } catch (error) {
@@ -44,6 +56,8 @@ router.post('/',
 );
 
 router.post('/add-item',
+  passport.authenticate('jwt', {session: false}),
+  checkRoles('admin', 'seller', 'customer'),
   validatorHandler(addItemSchema, 'body'),
   async (req, res, next) => {
     try {
@@ -57,6 +71,8 @@ router.post('/add-item',
 );
 
 router.patch('/:id',
+  passport.authenticate('jwt', {session: false}),
+  checkRoles('admin', 'seller', 'customer'),
   validatorHandler(getOrderSchema, 'params'),
   validatorHandler(updateOrderSchema, 'body'),
   async (req, res, next) => {
@@ -72,6 +88,8 @@ router.patch('/:id',
 );
 
 router.delete('/:id',
+  passport.authenticate('jwt', {session: false}),
+  checkRoles('admin', 'seller'),
   validatorHandler(getOrderSchema, 'params'),
   async (req, res, next) => {
     try {

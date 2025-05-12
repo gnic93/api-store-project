@@ -7,7 +7,22 @@ class OrderService {
   }
 
   async create(data) {
-    const newOrder = await models.Order.create(data);
+    // Accedemos al modelo Customer y usando where encadenamos hacia user
+    const customer = await models.Customer.findOne({
+      where: {
+        '$user.id$': data.userId
+      },
+      include: ['user']
+    });
+    // Validamos que exista el customer
+    if (!customer) {
+      throw boom.notFound('Customer not found');
+    }
+    // Creamos un objeto con el customerId obtenido de la consulta
+    const dataOrder = {
+      customerId: customer.id
+    };
+    const newOrder = await models.Order.create(dataOrder);
     return newOrder;
   }
 
@@ -36,6 +51,26 @@ class OrderService {
       options.offset = offset
     }
     const orders = await models.Order.findAll(options);
+    return orders;
+  }
+
+  async findByUser(userId) {
+    const orders = await models.Order.findAll({
+      where: {
+        '$customer.user.id$': userId
+      },
+      include: [
+        {
+          association: 'customer',
+          include: [
+            {
+              association: 'user',
+              attributes: { exclude: ['password'] } // Excluir el campo password
+            }
+          ]
+        }
+      ]
+    });
     return orders;
   }
 

@@ -1,6 +1,10 @@
 const express = require('express');
+const passport = require('passport');
+
 const ProductService = require('../services/product.service');
 const validatorHandler = require('../middlewares/validator.handler');
+const { checkRoles } = require('./../middlewares/auth.handler');
+
 const { createProductSchema, updateProductSchema, getProductSchema, queryProductSchema } = require('../schemas/product.schema');
 
 const router = express.Router();
@@ -26,6 +30,8 @@ router.get('/:id',
 });
 
 router.post('/',
+  passport.authenticate('jwt', {session: false}),
+  checkRoles('admin', 'seller'),
   validatorHandler(createProductSchema, 'body'),
   async (req, res) => {
   const body = req.body;
@@ -34,6 +40,8 @@ router.post('/',
 });
 
 router.patch('/:id',
+  passport.authenticate('jwt', {session: false}),
+  checkRoles('admin', 'seller'),
   validatorHandler(getProductSchema, 'params'),
   validatorHandler(updateProductSchema, 'body'),
   async (req, res, next) => {
@@ -47,7 +55,11 @@ router.patch('/:id',
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id',
+  passport.authenticate('jwt', {session: false}),
+  checkRoles('admin', 'seller'),
+  validatorHandler(getProductSchema, 'params'),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const respuesta = await service.delete(id);

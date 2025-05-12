@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const routerApi = require('./routes');
 const { logErrors, errorHandler, boomErrorHandler, ormErrorHandler } = require('./middlewares/error.handler');
+const { checkApiKey } = require('./middlewares/auth.handler');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -21,8 +22,11 @@ const options = {
 };
 app.use(cors(options));
 
+//Auth
+require('./utils/auth');
+
 // Rutas principales
-app.get('/api', (req, res) => {
+app.get('/api', checkApiKey, (req, res) => {
   res.send('API v1');
 });
 
