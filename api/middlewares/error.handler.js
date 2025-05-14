@@ -6,13 +6,21 @@ function logErrors (err, req, res, next) {
 
 function ormErrorHandler(err, req, res, next) {
   if (err instanceof ValidationError) {
+    // Eliminar la propiedad 'instance' de cada error en el array 'errors'
+    if (Array.isArray(err.errors)) {
+      err.errors.forEach(error => {
+        delete error.instance;
+      });
+    }
+
     res.status(409).json({
-    statusCode: 409,
-    message: err.name,
-    errors: err.errors
+      statusCode: 409,
+      message: err.name,
+      errors: err.errors
     });
+  } else {
+    next(err);
   }
-  next(err);
 }
 
 function boomErrorHandler (err, req, res, next) {
